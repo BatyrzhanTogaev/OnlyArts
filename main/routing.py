@@ -1,6 +1,6 @@
-from django.urls import re_path
-from .consumers import ArtworkConsumer
+from django.urls import path
+from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r'ws/artwork/(?P<artwork_id>\d+)/$', ArtworkConsumer.as_asgi()),
+    path('ws/artwork/<int:artwork_id>/', consumers.ArtworkConsumer.as_asgi()),
 ]

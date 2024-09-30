@@ -1,83 +1,79 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="container">
+<div class="container">
     <div class="row">
-      <div class="col-md-8">
-        <!-- Отображение изображения работы -->
-        <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}" class="img-fluid">
-        <h2>{{ artwork.title }}</h2>
-        <p><strong>By:</strong> {{ artwork.author.username }}</p>
-        <p><strong>Description:</strong> {{ artwork.description }}</p>
-        <p><strong>Likes:</strong> <span id="likes-count">{{ artwork.likes }}</span></p>
-        <button onclick="likeArtwork()" class="btn btn-primary">Like</button>
-      </div>
+        <div class="col-md-8">
+            <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}" class="img-fluid">
+            <h2>{{ artwork.title }}</h2>
+            <p><strong>By:</strong> {{ artwork.author.username }}</p>
+            <p><strong>Description:</strong> {{ artwork.description }}</p>
+            <p><strong>Likes:</strong> <span id="likes-count">{{ artwork.likes }}</span></p>
+            <button onclick="likeArtwork()" class="btn btn-primary">Like</button>
+        </div>
 
-      <!-- Секция с комментариями -->
-      <div class="col-md-4">
-        <h3>Comments</h3>
-        <ul class="list-group" id="comments-list">
-          {% for comment in artwork.comments.all %}
-            <li class="list-group-item">
-              <strong>{{ comment.author.username }}:</strong> {{ comment.text }} <br>
-              <small>{{ comment.created_at }}</small>
-            </li>
-          {% empty %}
-            <li class="list-group-item">No comments yet.</li>
-          {% endfor %}
-        </ul>
+        <div class="col-md-4">
+            <h3>Comments</h3>
+            <ul class="list-group" id="comments-list">
+                {% for comment in comments %}
+                    <li class="list-group-item">
+                        <strong>{{ comment.author.username }}:</strong> {{ comment.text }} <br>
+                        <small>{{ comment.created_at }}</small>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No comments yet.</li>
+                {% endfor %}
+            </ul>
 
-        <!-- Форма для добавления комментария -->
-        <h4>Leave a comment</h4>
-        <textarea id="comment-text" class="form-control" rows="3" placeholder="Add a comment..."></textarea>
-        <button onclick="postComment()" class="btn btn-primary mt-2">Post Comment</button>
-      </div>
+            <h4>Leave a comment</h4>
+            <textarea id="comment-text" class="form-control" rows="3" placeholder="Add a comment..."></textarea>
+            <button onclick="postComment()" class="btn btn-primary mt-2">Post Comment</button>
+        </div>
     </div>
-  </div>
+</div>
+onst roomName = "{{ room_name }}";
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/user/' + roomName + '/'
+        );
 
-  <!-- Скрипт для работы с WebSocket -->
-  <script>
-    // Подключение к WebSocket с использованием правильного пути
-    var artwork_id = 1;    // Замените на актуальный ID вашего произведения
-    var ws = new WebSocket('ws://localhost:8000/ws/artwork/' + artwork_id + '/');
-
-
-    // Обработка новых сообщений от WebSocket (лайки и комментарии)
-    ws.onmessage = function(event) {
-        var data = JSON.parse(event.data);
-
-        // Обработка нового комментария
-        if (data.comment) {
-            var newComment = '<li class="list-group-item"><strong>' + data.author + ':</strong> ' + data.comment + '</li>';
-            document.getElementById('comments-list').innerHTML += newComment;
-        } 
-        // Обработка обновления количества лайков
-        else if (data.likes) {
-            document.getElementById('likes-count').innerText = data.likes;
-        }
-    };
-
-    // Отправка комментария через WebSocket
-    function postComment() {
-        var comment = document.getElementById('comment-text').value;
-
-        if (comment) {
-            ws.send(JSON.stringify({
-                'action': 'comment',
-                'comment': comment
-            }));
-
-            document.getElementById('comment-text').value = '';  // Очистить поле
-        }
-    }
-
-    // Отправка лайка через WebSocket
-    function likeArtwork() {
-        ws.send(JSON.stringify({
-            'action': 'like'
-        }));
-    }
-</script>
-
+        <script>
+            const artworkId = "{{ artwork.id }}";  // Здесь вы используете идентификатор artwork из контекста
+            const socket = new WebSocket(`ws://127.0.0.1:8000/ws/artwork/${artworkId}/`);
+        
+            socket.onopen = function(event) {
+                console.log("WebSocket is open now.");
+            };
+        
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.likes) {
+                    // Обновите количество лайков на странице
+                    document.getElementById('likes-count').innerText = data.likes;
+                }
+                if (data.comment) {
+                    // Обновите комментарии на странице
+                    const commentsList = document.getElementById('comments-list');
+                    const newComment = document.createElement('li');
+                    newComment.innerText = `${data.author}: ${data.comment}`;
+                    commentsList.appendChild(newComment);
+                }
+            };
+        
+            socket.onclose = function(event) {
+                console.log("WebSocket is closed now.");
+            };
+        
+            // Функция для лайка
+            function likeArtwork() {
+                socket.send(JSON.stringify({ action: 'like' }));
+            }
+        
+            // Функция для добавления комментария
+            function addComment() {
+                const commentText = document.getElementById('comment-input').value;
+                socket.send(JSON.stringify({ action: 'comment', comment: commentText }));
+                document.getElementById('comment-input').value = '';  // Очистите поле ввода
+            }
+        </script>
 
 {% endblock %}
