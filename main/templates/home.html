@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="container">
+    <h2>New Artworks</h2>
+    <div class="row">
+      {% for artwork in artworks %}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm">
+            <img src="{{ artwork.image.url }}" class="card-img-top" alt="{{ artwork.title }}">
+            <div class="card-body">
+              <h5 class="card-title">{{ artwork.title }}</h5>
+              <p class="card-text">{{ artwork.description|truncatewords:15 }}</p>
+              <p class="card-text"><small class="text-muted">By {{ artwork.author }}</small></p>
+              <p class="card-text"><small class="text-muted">Likes: {{ artwork.likes }}</small></p>
+              <a href="{% url 'artwork-detail' artwork.id %}" class="btn btn-primary">View</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    <nav>
+      <ul class="pagination">
+        {% if artworks.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ artworks.previous_page_number }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item active"><a class="page-link">{{ artworks.number }}</a></li>
+        {% if artworks.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ artworks.next_page_number }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+{% endblock %}
